@@ -13,8 +13,8 @@ Nous limitons notre étude aux 6 actions ci-dessous :
 - tomber
 - marcher
 
-Nous utilisons, pour se faire, une architecture Part-Aware LSTM proposée dans [ce document](https://arxiv.org/abs/1604.02808)
-et implémentée par [FesianXu](https://github.com/FesianXu/PLSTM) comme modèle.
+Nous utilisons comme modèle une architecture Part-Aware LSTM proposée dans [ce document](https://arxiv.org/abs/1604.02808)
+et implémentée par [FesianXu](https://github.com/FesianXu/PLSTM).
 
 Nous avons entraîné ce modèle sur une partie de [la base de données NTURBG-D](http://rose1.ntu.edu.sg/datasets/actionrecognition.asp)
 ne contenant que les données correspondant aux 6 actions citées plus haut.
