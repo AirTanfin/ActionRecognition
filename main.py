@@ -24,11 +24,9 @@ config = tf.ConfigProto()
 model = PLSTM.PLSTM(batch_size=batch_size, lr=lr, n_layers=n_layers)
 dat = pd.read_csv(data_path, sep=';').values
 data_dict = {
-    'id': 0,
     'mat': dat,
     'view': None,
     'action': None,
-    'actor': None
 }
 data = np.array([data_dict])
 data_size = data.shape[0]
