@@ -3,55 +3,56 @@ import pandas as pd
 import tensorflow as tf
 import PLSTM
 import DataLoader
-from features import g_num_action, batch_size, lr, n_layers
+from features import batch_size, lr, n_layers
 
 data_path = "/Users/airtanfin/Documents/Python/PLSTM/data/skeleton.csv"
 model_path = "/Users/airtanfin/Documents/Python/PLSTM/model/"
 preds_path = "/Users/airtanfin/Documents/Python/PLSTM/data/preds.csv"
+n = 300
+p = 10
+action_names = ["Sitting down", "Standing up", "Reading", "Staggering", "Falling", "Walking"]
 
 
-def eval_f(sess, model, datas):
-    mats, labels, views = datas
-    feed_dict = {
-        model.skel_input: mats,
-        model.plstm_keep_prob: 1.00
-    }
+def eval_f(sess, model, data):
+    feed_dict = {model.skel_input: data, model.plstm_keep_prob: 1.00}
 
     return sess.run(model.action_distribution, feed_dict)
 
 
-config = tf.ConfigProto()
+a = 0
+b = n
+
+while pd.read_csv(data_path, header=None, sep=';').shape[0] < b:
+    pass
+
 model = PLSTM.PLSTM(batch_size=batch_size, lr=lr, n_layers=n_layers)
-dat = pd.read_csv(data_path, sep=';').values
-data_dict = {
-    'mat': dat,
-    'view': None,
-    'action': None,
-}
-data = np.array([data_dict])
-data_size = data.shape[0]
-dl = DataLoader.DataLoader(skel_train=None, skel_test=data, mode="test")
-preds = np.zeros((data_size, g_num_action))
+dat = np.array([pd.read_csv(data_path, header=None, sep=';', skiprows=a, nrows=b).values])
+dl = DataLoader.DataLoader(skel_train=None, skel_test=dat, mode="test")
 
-with tf.Session(config=config) as sess:
-    sess.run(tf.global_variables_initializer())
-    saver = tf.train.Saver()
-    saver.restore(sess, model_path)
-    anchor = 0
+config = tf.ConfigProto()
+sess = tf.Session(config=config)
+sess.run(tf.global_variables_initializer())
+saver = tf.train.Saver()
+saver.restore(sess, model_path)
 
-    for i in range(data_size):
-        if anchor > data_size - batch_size:
-            break
-
-        datas = dl.get_test_sample(batch_size, anchor, is_rotate=True)
-        preds[i, :] = eval_f(sess, model, datas)
-        anchor += batch_size
-
-action_names = ["Sitting down", "Standing up", "Reading", "Staggering", "Falling", "Walking"]
-res = {}
-
-for ind, name in enumerate(action_names):
-    res[name] = preds[:, ind]
-
-df = pd.DataFrame(res, columns=action_names)
+data = dl.get_test_sample(batch_size, 0, is_rotate=True)
+preds = eval_f(sess, model, data)
+df = pd.DataFrame(data=preds, columns=action_names)
 df.to_csv(preds_path, sep=';', index=False)
+
+while True:
+    a += p
+    b += p
+
+    while pd.read_csv(data_path, header=None, sep=';').shape[0] < b:
+        pass
+
+    dat = np.array([pd.read_csv(data_path, header=None, sep=';', skiprows=a, nrows=b).values])
+    dl = DataLoader.DataLoader(skel_train=None, skel_test=dat, mode="test")
+
+    data = dl.get_test_sample(batch_size, 0, is_rotate=True)
+    preds = eval_f(sess, model, data)
+    df = df.append(pd.DataFrame(data=preds, columns=action_names))
+    df.to_csv(preds_path, sep=';', index=False)
+
+sess.close()

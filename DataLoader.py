@@ -131,14 +131,9 @@ class DataLoader(object):
 
     def get_test_sample(self, batch_size, ind, is_rotate):
         mat_batch = np.zeros(shape=(batch_size, self.lstm_time_step, g_feat_dim))
-        label_batch = np.zeros(shape=(batch_size, 1))
-        view_batch = np.zeros(shape=(batch_size, 1))
 
         for each in range(batch_size):
-            data = self.__skel_test_dataset[ind+each]
-            mat = data['mat']
-            label = data['action']
-            view = data['view']
+            mat = self.__skel_test_dataset[ind+each]
             mat = self.__T_clips(mat, T_size=self.lstm_time_step)
             mat = np.reshape(mat, newshape=(-1, g_feat_dim))
 
@@ -146,7 +141,5 @@ class DataLoader(object):
                 mat = self._pararell_skeleton(mat)
 
             mat_batch[each] = mat
-            label_batch[each] = label
-            view_batch[each] = view
 
-        return mat_batch, label_batch, view_batch
+        return mat_batch

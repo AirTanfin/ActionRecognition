@@ -36,7 +36,6 @@ class PLSTM(object):
         self.pred_mergerd_op = tf.summary.merge(pred_summary_list)
 
     def _build_graph(self):
-
         def _get_PLSTM_cells(hidden_layer):
             return PartAwareLSTMCell.PartAwareLSTMCell(num_units=hidden_layer)
 
