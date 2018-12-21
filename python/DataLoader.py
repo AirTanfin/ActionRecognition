@@ -5,7 +5,7 @@ __version__ = ''
 import numpy as np
 import random
 from keras.utils import to_categorical
-from python.features import g_feat_dim, g_num_action
+from features import g_feat_dim, g_num_action
 
 
 class DataLoader(object):

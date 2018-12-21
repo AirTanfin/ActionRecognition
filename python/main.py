@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import os
 import tensorflow as tf
-from python import PLSTM, DataLoader
-from python.features import batch_size, lr, n_layers, n_frame, step
+import PLSTM, DataLoader
+from features import batch_size, lr, n_layers, n_frame, step
 
 data_path = "C:\\ActionRecognition\\data\\skeleton.csv"
 model_path = "C:\\ActionRecognition\\python\\model"
