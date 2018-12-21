@@ -4,13 +4,11 @@ import os
 import tensorflow as tf
 import PLSTM
 import DataLoader
-from features import batch_size, lr, n_layers
+from features import batch_size, lr, n_layers, n_frame, step
 
-data_path = "/Users/airtanfin/Documents/Python/PLSTM/data/skeleton.csv"
-model_path = "/Users/airtanfin/Documents/Python/PLSTM/model/"
-preds_path = "/Users/airtanfin/Documents/Python/PLSTM/data/preds.csv"
-n_frame = 300
-step = 10
+data_path = "C:\\ActionRecognition\\data\\skeleton.csv"
+model_path = "C:\\ActionRecognition\\model"
+preds_path = "C:\\ActionRecognition\\data\\preds.csv"
 action_names = ["Sitting down", "Standing up", "Reading", "Staggering", "Falling", "Walking"]
 
 
