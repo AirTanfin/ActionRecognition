@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import os
 import tensorflow as tf
 import PLSTM
 import DataLoader
@@ -8,8 +9,8 @@ from features import batch_size, lr, n_layers
 data_path = "/Users/airtanfin/Documents/Python/PLSTM/data/skeleton.csv"
 model_path = "/Users/airtanfin/Documents/Python/PLSTM/model/"
 preds_path = "/Users/airtanfin/Documents/Python/PLSTM/data/preds.csv"
-n = 300
-p = 10
+n_frame = 300
+step = 10
 action_names = ["Sitting down", "Standing up", "Reading", "Staggering", "Falling", "Walking"]
 
 
@@ -20,9 +21,9 @@ def eval_f(sess, model, data):
 
 
 a = 0
-b = n
+b = n_frame
 
-while pd.read_csv(data_path, header=None, sep=';').shape[0] < b:
+while os.path.getsize(data_path) == 0 or pd.read_csv(data_path, header=None, sep=';').shape[0] < b:
     pass
 
 model = PLSTM.PLSTM(batch_size=batch_size, lr=lr, n_layers=n_layers)
@@ -41,8 +42,8 @@ df = pd.DataFrame(data=preds, columns=action_names)
 df.to_csv(preds_path, sep=';', index=False)
 
 while True:
-    a += p
-    b += p
+    a += step
+    b += step
 
     while pd.read_csv(data_path, header=None, sep=';').shape[0] < b:
         pass
@@ -54,5 +55,3 @@ while True:
     preds = eval_f(sess, model, data)
     df = df.append(pd.DataFrame(data=preds, columns=action_names))
     df.to_csv(preds_path, sep=';', index=False)
-
-sess.close()

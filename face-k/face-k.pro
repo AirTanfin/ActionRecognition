@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui charts
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -30,7 +30,7 @@ INCLUDEPATH += $$PWD/inc
 DEPENDPATH += $$PWD/inc
 
 # OpenCV
-INCLUDEPATH += C:\opencv\build\include
+INCLUDEPATH += C:\Opencv\include
 # Mettre le chemin vers l'install d'OpenCV et ajouté les bonnes libs
 # Normalement, seul core, highgui et imgproc sont utilisés dans l'appli
 LIBS += C:\opencv-build\bin\libopencv_core344.dll
@@ -38,3 +38,4 @@ LIBS += C:\opencv-build\bin\libopencv_highgui344.dll
 LIBS += C:\opencv-build\bin\libopencv_imgproc344.dll
 LIBS += C:\opencv-build\bin\libopencv_features2d344.dll
 LIBS += C:\opencv-build\bin\libopencv_calib3d344.dll
+

@@ -3,6 +3,12 @@
 #include "ui_mainwindow.h"
 #include "inc/Kinect.h"
 #include <vector>
+#include <fstream>
+#include <iomanip>
+#include <ctime>
+#include <stdio.h>
+#include <stdlib.h>
+
 
 /// OpenCV includes
 #include <opencv2/core/core.hpp>
@@ -14,25 +20,33 @@
 #include <QFileDialog>
 #include <QString>
 #include <QTimer>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QMainWindow>
+#include <QtCharts/QChartView>
+#include <QtCharts/QPieSeries>
+#include <QtCharts/QPieSlice>
+#include <QtWidgets>
 
 /// Namespace
 using namespace cv;
 using namespace std;
+using namespace QtCharts;
 
 /// Global variables
 static const int colorWidth = 1920;
 static const int colorHeight = 1080;
-static const int depthWidth = 512;
-static const int depthHeight = 424;
+
 
 /// Global variables for the Kinect Sensor
 IKinectSensor* kinectSensor;
 IColorFrameReader* colorFrameReader;
-IDepthFrameReader* depthFrameReader;
+IBodyFrameReader* bodyFrameReader;
 RGBQUAD* colorRGBX;
 RGBQUAD* depthRGBX;
 QString filePath;
 QString destDirectory = QDir::currentPath();
+boolean tracked;
+Joint joints[JointType_Count];
 
 /// Method to release an interface (frames)
 template<class Interface>
@@ -52,9 +66,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     kinectSensor = NULL;
     colorFrameReader = NULL;
-    depthFrameReader = NULL;
+    bodyFrameReader = NULL;
     colorRGBX = new RGBQUAD[colorWidth * colorHeight]; // Heap for the color data
-    depthRGBX = new RGBQUAD[depthWidth * depthHeight]; // Heap for the depth data
 
     init(); // Initialize and test the Kinect sensor
 
@@ -71,13 +84,16 @@ MainWindow::~MainWindow()
 
 /// Initialize the Kinect sensor and the color frame reader
 void MainWindow::init() {
+
     HRESULT hr;
     hr = GetDefaultKinectSensor(&kinectSensor); // Get the Kinect sensor
     if(FAILED(hr)) return;
 
+
+
     if(kinectSensor) {
         IColorFrameSource* colorFrameSource = NULL;
-        IDepthFrameSource* depthFrameSource = NULL;
+        IBodyFrameSource* bodyFrameSource = NULL;
         hr = kinectSensor->Open(); // Open the sensor
 
         // Check color
@@ -85,10 +101,24 @@ void MainWindow::init() {
         if(SUCCEEDED(hr)) { hr = colorFrameSource->OpenReader(&colorFrameReader); }
         SafeRelease(colorFrameSource);
 
-        // Check depth
-        if(SUCCEEDED(hr)) { hr = kinectSensor->get_DepthFrameSource(&depthFrameSource); }
-        if(SUCCEEDED(hr)) { hr = depthFrameSource->OpenReader(&depthFrameReader); }
-        SafeRelease(depthFrameSource);
+        //Check body
+        if(SUCCEEDED(hr)) { hr = kinectSensor->get_BodyFrameSource(&bodyFrameSource); }
+        if(SUCCEEDED(hr)) { hr = bodyFrameSource->OpenReader(&bodyFrameReader); }
+        if( remove( "C:\\skeleton.csv" ) != 0 ) {perror( "Error deleting file" );}
+        if( remove( "C:\\Users\\Rémi\\Desktop\\ActionRecognition\\data\\preds.csv" ) != 0 ) {perror( "Error deleting file" );}
+        std::fstream outfile;
+        outfile.open ("C:\\preds.csv", std::fstream::in | std::fstream::out | std::fstream::app);
+        outfile << flush;
+        outfile.close();
+        std::fstream outfile2;
+        outfile2.open ("C:\\Users\\Rémi\\Desktop\\ActionRecognition\\data\\skeleton.csv", std::fstream::in | std::fstream::out | std::fstream::app);
+        outfile2 << flush;
+        outfile2.close();
+        string command = "python C:\\Users\\Rémi\\Desktop\\ActionRecognition\\main.py";
+        std::system(command.c_str());
+
+        SafeRelease(bodyFrameSource);
+
     }
 
     if(!kinectSensor || FAILED(hr)) return;
@@ -98,10 +128,10 @@ void MainWindow::init() {
 void MainWindow::updateKinectData() {
 
     if(!colorFrameReader) return;
-    if(!depthFrameReader) return;
+    if(!bodyFrameReader) return;
 
     IColorFrame* colorFrame = NULL;
-    IDepthFrame* depthFrame = NULL;
+    IBodyFrame* bodyFrame = NULL;
 
     // Color
     HRESULT hr = colorFrameReader->AcquireLatestFrame(&colorFrame); // Get the last color frame from the sensor
@@ -140,27 +170,147 @@ void MainWindow::updateKinectData() {
     }
     SafeRelease(colorFrame); // Release the color frame (free the memory)
 
-    // Depth
-    hr = depthFrameReader->AcquireLatestFrame(&depthFrame); // Get the last color frame from the sensor
+    // Body
+    hr = bodyFrameReader->AcquireLatestFrame(&bodyFrame); // Get the last body frame from the sensor
     if(SUCCEEDED(hr)) {
-        UINT depthSize = depthWidth * depthHeight;
-        UINT16 depthData[depthWidth * depthHeight];
-        hr = depthFrame->CopyFrameDataToArray(depthSize, depthData);
-
-        if(SUCCEEDED(hr)){
-            // Transform the depth frame in OpenCV matrix
-            Mat* depthOut = new Mat(depthHeight, depthWidth, CV_8U);
-            for(unsigned int i = 0; i < depthSize; i++) {
-                uchar depthDat = depthData[i];
-                depthOut->at<byte>(i) = depthDat;
+        IBody* body[BODY_COUNT]={0};
+        bodyFrame->GetAndRefreshBodyData(_countof(body), body);
+        for (int i = 0; i < BODY_COUNT; i++) {
+            body[i]->get_IsTracked(&tracked);
+            if (tracked) {
+                hr = body[i]->GetJoints(JointType_Count, joints);
+                if(SUCCEEDED(hr)){
+                    std::ofstream outfile;
+                    outfile.open("C:\\Users\\Rémi\\Desktop\\ActionRecognition\\data\\skeleton.csv", std::ios::app | std::ios::binary);
+                    std::string buff1 = std::to_string(joints[0].Position.X);
+                    std::string buff2 = std::to_string(joints[0].Position.Y);
+                    std::string buff3 = std::to_string(joints[0].Position.Z);
+                    outfile << buff1;
+                    outfile << ";";
+                    outfile << buff2;
+                    outfile << ";";
+                    outfile << buff3;
+                    for (int j = 1; j < _countof(joints); ++j)
+                    {
+                        std::string buff1 = std::to_string(joints[j].Position.X);
+                        std::string buff2 = std::to_string(joints[j].Position.Y);
+                        std::string buff3 = std::to_string(joints[j].Position.Z);
+                        outfile << ";";
+                        outfile << buff1;
+                        outfile << ";";
+                        outfile << buff2;
+                        outfile << ";";
+                        outfile << buff3;
+                    }
+                    outfile << "\n";
+                    outfile.close();
+                }
+                break;
             }
-
-            // Display the depth frame on the interface
-            QImage depth(depthOut->data, depthOut->cols, depthOut->rows, depthOut->step, QImage::Format_Grayscale8);
-            this->ui->depth->setPixmap(QPixmap::fromImage(depth).scaledToWidth(this->ui->depth->width()));
-
-            depthOut->release(); // Release the matrix (free the memory)
         }
+   }
+
+    if(SUCCEEDED(hr)) {
+        ifstream file ( "C:\\Users\\Rémi\\Desktop\\ActionRecognition\\data\\preds.csv" );
+        string lastLine;
+        if(file.is_open()) {
+            file.seekg(-1,ios_base::end);                // go to one spot before the EOF
+
+            bool keepLooping = true;
+            while(keepLooping) {
+                char ch;
+                file.get(ch);                            // Get current byte's data
+
+                if((int)file.tellg() <= 1) {             // If the data was at or before the 0th byte
+                    file.seekg(0);                       // The first line is the last line
+                    keepLooping = false;                // So stop there
+                }
+                else if(ch == '\n') {                   // If the data was a newline
+                    keepLooping = false;                // Stop at the current position.
+                }
+                else {                                  // If the data was neither a newline nor at the 0 byte
+                    file.seekg(-2,ios_base::cur);        // Move to the front of that data, then to the front of the data before it
+                }
+            }
+            getline(file,lastLine);
+            file.close();
+        }
+        stringstream lastLineStream(lastLine);
+        string value;
+        string values[6]= {"Sitting down","Standing up","Reading","Staggering","Falling","Walking"};
+        std::map<std::string, float> Map;
+        std::map<std::string, int> Mapname;
+        int count=0;
+
+        while (getline(lastLineStream, value, ';'))
+        {
+            Map.insert (std::make_pair(values[count], atof(value.c_str())));
+            Mapname.insert (std::make_pair(values[count], count));
+            count++;
+        }
+
+        QPieSeries *series = new QPieSeries();
+        series->append("Sitting down", Map.find("Sitting down")->second);
+        series->append("Standing up", Map.find("Standing up")->second);
+        series->append("Reading", Map.find("Reading")->second);
+        series->append("Staggering", Map.find("Staggering")->second);
+        series->append("Falling", Map.find("Falling")->second);
+        series->append("Walking", Map.find("Walking")->second);
+
+        float currentMax = 0;
+        std::string arg_max = "unknown";
+        for(auto it = Map.cbegin(); it != Map.cend(); ++it ) {
+
+            if (it ->second > currentMax) {
+                arg_max = it->first;
+                currentMax = it->second;
+            }
+        }
+
+        if (currentMax==0){
+            QPieSeries *series2 = new QPieSeries();
+            series2->append("unknown", 1);
+            series2->setLabelsVisible();
+            series2->setLabelsPosition(QPieSlice::LabelInsideHorizontal);
+            QChart *chart = new QChart();
+            chart->addSeries(series2);
+            chart->setTitle("predicition");
+            chart->legend()->hide();
+            QChartView *chartView = new QChartView(chart);
+            chartView->setRenderHint(QPainter::Antialiasing);
+            ui->gridLayout->addWidget(chartView,0,0);
+        }
+
+        else{
+            QPieSlice *slice = series->slices().at(Mapname.find(arg_max)->second);
+            slice->setExploded();
+            slice->setLabelVisible();
+            slice->setPen(QPen(Qt::darkGreen, 2));
+            slice->setBrush(Qt::green);
+            series->setLabelsVisible();
+            series->setLabelsPosition(QPieSlice::LabelInsideHorizontal);
+            QChart *chart = new QChart();
+            chart->addSeries(series);
+            chart->setTitle("predicition");
+            chart->legend()->hide();
+            QChartView *chartView = new QChartView(chart);
+            chartView->setRenderHint(QPainter::Antialiasing);
+            ui->gridLayout->addWidget(chartView,0,0);
+        }
+
+
+        auto t = std::time(nullptr);
+        auto tm = *std::localtime(&t);
+        std::ostringstream oss;
+        oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+        auto date = oss.str();
+        std::string histostd =date+" prediction : "+arg_max+" "+to_string(currentMax*100)+"%";
+        QString histo = QString::fromStdString(histostd);
+        ui->textBrowser->append(histo);
     }
-    SafeRelease(depthFrame); // Release the depth frame (free the memory)
+
+    SafeRelease(bodyFrame); // Release the depth frame (free the memory)
+
+
+
 }
