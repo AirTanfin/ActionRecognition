@@ -30,7 +30,7 @@ programme principal.
 Dans le dossier data, on retrouve les fichiers csv  dans lesquels on écrit les données issues de la kinect et l'on écrit les
 résultats.
 
-Pour utiliser notre application, il faut lancer le programme app/main.cpp. La kinect va commencer à écrire les informations dans
+Pour utiliser notre application, il faut lancer le programme face-k/main.cpp. La kinect va commencer à écrire les informations dans
 le fichier data/skeleton.csv. Puis, le script Python main.py va être lancé dans un second thread et commencer à traiter les données
 du fichier data/skeleton.csv et faire des prédictions qu'il va écrire dans le fichier preds.csv. Dans le thread principal, les
 prédictions vont être lues et affichées à l'écran sous la forme d'un camembert.
