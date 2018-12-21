@@ -2,10 +2,10 @@ __author__ = 'FesianXu'
 __date__ = 2018 / 3 / 19
 __version__ = ''
 
-import PartAwareLSTMCell
+from python import PartAwareLSTMCell
 import tensorflow as tf
 import pandas as pd
-from features import batch_size, g_feat_dim, g_num_action, g_T_size, lr, n_layers
+from python.features import batch_size, g_feat_dim, g_num_action, g_T_size, lr, n_layers
 
 
 class PLSTM(object):

@@ -114,7 +114,7 @@ void MainWindow::init() {
         outfile2.open ("C:\\Users\\Rémi\\Desktop\\ActionRecognition\\data\\skeleton.csv", std::fstream::in | std::fstream::out | std::fstream::app);
         outfile2 << flush;
         outfile2.close();
-        string command = "python C:\\Users\\Rémi\\Desktop\\ActionRecognition\\main.py";
+        string command = "python C:\\Users\\Rémi\\Desktop\\ActionRecognition\\python\\main.py";
         std::system(command.c_str());
 
         SafeRelease(bodyFrameSource);
