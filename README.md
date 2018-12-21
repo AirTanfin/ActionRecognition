@@ -24,7 +24,7 @@ du modèle entraîné. La classe DataLoader permet de traiter les données récu
 à l'architecture de notre réseau de neurones. Dans le fichier features.py, on retrouve les paramètres de notre modèle
 (nombre de couches cachées, taux d'apprentissage, ...). Le fichier main.py correspond au programme principal.
 
-Dans le dossier app, on retrouve tous les fichiers C++ correspondant à l'interface utilisateur. Le fichier main.cpp correspond au
+Dans le dossier face-k, on retrouve tous les fichiers C++ correspondant à l'interface utilisateur. Le fichier main.cpp correspond au
 programme principal. 
 
 Dans le dossier data, on retrouve les fichiers csv  dans lesquels on écrit les données issues de la kinect et l'on écrit les
